@@ -1,0 +1,71 @@
+---
+# tasks file for xps13-ubuntu
+
+- name: turn off translations, speed up apt-get update
+  become: true
+  lineinfile: dest=/etc/apt/apt.conf.d/99translations line='Acquire::Languages "none";' create=yes state=present backup=yes
+
+- name: update & upgrade
+  become: true
+  apt: update_cache=yes upgrade=yes cache_valid_time=3600
+
+- name: Add user to sudoers and systemd groups
+  become: true
+  user: name={{ lookup('env','USER') }} groups=sudo append=yes
+
+- name: systemd groups
+  become: true
+  user: name={{ lookup('env','USER') }} groups=systemd-journal,systemd-network append=yes
+  
+- name: no password for sudo 
+  become: true
+  lineinfile: dest=/etc/sudoers.d/{{ lookup('env','USER') }} line="{{ lookup('env','USER') }} ALL=(ALL) NOPASSWD:ALL" create=yes state=present backup=yes 
+
+- name: switch ctrl with capslock
+  become: true
+  lineinfile: dest=/etc/default/keyboard regexp='XKBOPTIONS=' line='XKBOPTIONS="ctrl:nocaps"' state=present backup=yes
+  register: keyboard_file
+
+- name: Configure keyboard
+  command: dpkg-reconfigure keyboard-configuration -f noninteractive
+  become: true
+  when: keyboard_file.changed
+
+- name: Change the font to more readable size 
+  become: true
+  copy: src=console-setup dest=/etc/default/console-setup owner=root group=root mode=0644 backup=yes
+  register: console_file
+
+- name: Reconfigure console 
+  command: dpkg-reconfigure console-setup -f noninteractive
+  become: true
+  when: console_file.changed
+
+- name: Installs base packages
+  become: true
+  action: apt name={{ item }} state=installed install_recommends=no update_cache=yes cache_valid_time=3600
+  with_items:
+	- git
+	- curl
+	- jq
+	- tree
+
+
+# Install neovim
+
+- name: add repository for neovim
+  become: true
+  apt_repository: repo='ppa:neovim-ppa/unstable' state=present update_cacne=yes
+
+- name: Install neovim
+  become: true
+  apt: name=neovim state=present
+
+- name: Python dependency for neovim python modules
+  become: true
+  action: apt name={{item}} state=installed install_recommends=no update_cache=yes cache_valid_time=3600
+  with_items:
+	- python-dev
+	- python-pip
+	- python3-dev
+	- python3-pip
