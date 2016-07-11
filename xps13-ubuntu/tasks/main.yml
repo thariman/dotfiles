@@ -74,3 +74,10 @@
     - { link: '/usr/bin/vi', name: 'vi' }
     - { link: '/usr/bin/vim', name: 'vim' }
     - { link: '/usr/bin/editor', name: 'editor' }
+
+- name: File globs
+  #debug: msg="file dst={{ item | basename }}"
+  file: src={{ item }} dest={{ ansible_env.HOME }}/{{ item | basename }} state=link        
+  with_fileglob:
+    - .*
+
