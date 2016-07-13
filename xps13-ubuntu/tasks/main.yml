@@ -76,8 +76,40 @@
     - { link: '/usr/bin/editor', name: 'editor' }
 
 - name: File globs
-  #debug: msg="file dst={{ item | basename }}"
   file: src={{ item }} dest={{ ansible_env.HOME }}/{{ item | basename }} state=link        
   with_fileglob:
     - .*
 
+- name: Check if bluetooth firmware is loaded
+  shell: " /bin/dmesg | /bin/egrep -q 'BCM20702A1-0a5c-216f.hcd failed'"
+  register: result
+  ignore_errors: True
+
+- name: Get the cab file
+  get_url: url=http://download.windowsupdate.com/d/msdownload/update/driver/drvs/2014/07/20662520_6c535fbfa9dca0d07ab069e8918896086e2af0a7.cab dest=/tmp/20662520_6c535fbfa9dca0d07ab069e8918896086e2af0a7.cab
+  when: result|failed
+
+- name: Install cabextract
+  become: true
+  apt: name=cabextract state=present
+  when: result|failed
+
+- name: Checkout hex2hcd repo 
+  git: repo=https://github.com/jessesung/hex2hcd.git dest=/tmp/hex2hcd
+  when: result|failed
+
+- name: Make hex2hcd
+  make: chdir=/tmp/hex2hcd
+  when: result|failed
+
+- name: Extracting cab file
+  shell: "cd /tmp/hex2hcd && cabextract ../20662520_6c535fbfa9dca0d07ab069e8918896086e2af0a7.cab"
+  when: result|failed
+
+- name: Extract hcd file
+  shell: "cd /tmp/hex2hcd && ./hex2hcd BCM20702A1_001.002.014.1443.1572.hex ../BCM20702A1-0a5c-216f.hcd"
+  when: result|failed
+
+- name: Msg to reboot 
+  debug: msg="Need to reboot to include this bluetooth firmware"
+  when: result|failed
