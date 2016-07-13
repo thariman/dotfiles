@@ -76,7 +76,7 @@
     - { link: '/usr/bin/editor', name: 'editor' }
 
 - name: Create softlink to all .files to $HOME 
-  file: src={{ item }} dest={{ ansible_env.HOME }}/{{ item | basename }} state=link        
+  file: src={{ item }} dest={{ ansible_env.HOME }}/{{ item | basename }} state=link force=true       
   with_fileglob:
     - .*
 
