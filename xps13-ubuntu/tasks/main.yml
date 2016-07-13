@@ -110,6 +110,11 @@
   shell: "cd /tmp/hex2hcd && ./hex2hcd BCM20702A1_001.002.014.1443.1572.hex ../BCM20702A1-0a5c-216f.hcd"
   when: result|failed
 
+- name: Copy the file to the appropriate directory
+  become: true
+  copy: src=/tmp/BCM20702A1-0a5c-216f.hcd dest=/lib/firmware/brcm/BCM20702A1-0a5c-216f.hcd owner=root group=root mode="u=rw,g=r,o=r"
+  when: result|failed
+
 - name: Msg to reboot 
   debug: msg="Need to reboot to include this bluetooth firmware"
   when: result|failed
