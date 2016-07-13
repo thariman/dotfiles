@@ -81,7 +81,7 @@
     - .*
 
 - name: Check if bluetooth firmware is loaded
-  shell: " /bin/dmesg | /bin/egrep -q 'BCM20702A1-0a5c-216f.hcd failed'"
+  shell: "! /bin/dmesg | /bin/egrep -q 'BCM20702A1-0a5c-216f.hcd failed'"
   register: result
   ignore_errors: True
 
